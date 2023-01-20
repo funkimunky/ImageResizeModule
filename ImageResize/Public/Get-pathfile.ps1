@@ -1,4 +1,5 @@
-﻿Import-Module -Name C:\Users\dwthomson\powershell_scripts\ImportExcel -force
+﻿#TODO Fix this to account for specific version
+Import-Module -Name .\files\ImportExcel -force
 Function Get-pathfile{
     [CmdletBinding()]
     param (      
