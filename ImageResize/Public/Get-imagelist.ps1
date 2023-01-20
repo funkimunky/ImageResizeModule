@@ -5,7 +5,7 @@ Function Get-imagelist{
         [Parameter(Position = 0, Mandatory=$true)][ValidateNotNullOrEmpty()][System.Array]$paths,
         [Int]$Width,
         [Int]$Height,
-        [Int]$BatchAmount = 5000
+        [Int]$BatchAmount = 0
     )
     $ImageList = [System.Collections.ArrayList]::new()
     $arrpathlist = [System.Collections.ArrayList]$paths
@@ -17,13 +17,15 @@ Function Get-imagelist{
         ForEach-Object {
             $t = [System.Drawing.Image]::FromFile($_.FullName)             
             if ($t.Width -gt $Width -or $t.Height -gt $Height ) {
-                $ImageList.Add($_) 
-                $t.Dispose()     
-                if($counter -eq $BatchAmount){
+                if($counter -gt $BatchAmount){
                     [string]$outputStr = 'batch limit of {0} reached' -f $BatchAmount #need to add this to a log out
                     Write-Host $outputStr -ForegroundColor Magenta | Out-Null
-                    break outer #breaking named loop https://stackoverflow.com/questions/36025696/break-out-of-inner-loop-only-in-nested-loop
-                }                       
+                    $t.Dispose()
+                    break outer #breaking named loop https://stackoverflow.com/questions/36025696/break-out-of-inner-loop-only-in-nested-loop                    
+                }    
+                $ImageList.Add($_) 
+                $t.Dispose()     
+                                   
             }else{
                 $t.Dispose() #need to close connection to bitmap so it can be overwritten  
             }
