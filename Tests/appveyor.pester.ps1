@@ -1,4 +1,4 @@
-# This script will invoke pester tests
+# This script will invoke pester tests 
 # It should invoke on PowerShell v2 and later
 # We serialize XML results and pull them in appveyor.yml
 
