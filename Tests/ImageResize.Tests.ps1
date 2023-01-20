@@ -31,6 +31,10 @@ Describe "Test proof Fails PS$PSVersion Integrations tests" {
         It 'should get fail' {           
             $False | Should be $True
         }
+
+        It 'should get pass' {           
+            $True | Should be $True
+        }
     }
 }
 
