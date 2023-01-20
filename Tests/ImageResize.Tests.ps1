@@ -22,6 +22,18 @@ Import-Module $PSScriptRoot\..\ImageResize -Force
     }
 } #>
 
+Describe "Test proof Fails PS$PSVersion Integrations tests" {
+
+    Context 'Strict mode' { 
+
+        Set-StrictMode -Version latest
+
+        It 'should get fail' {           
+            $False | Should be $True
+        }
+    }
+}
+
 #Unit test example
 <# Describe "Get-SEObject PS$PSVersion Unit tests" {
 
