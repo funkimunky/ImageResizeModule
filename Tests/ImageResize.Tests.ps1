@@ -5,10 +5,10 @@ if($env:APPVEYOR_REPO_BRANCH -and $env:APPVEYOR_REPO_BRANCH -notlike "master")
 }
 
 $PSVersion = $PSVersionTable.PSVersion.Major
-Import-Module $PSScriptRoot\..\PSStackExchange -Force
+Import-Module $PSScriptRoot\..\ImageResize -Force
 
 #Integration test example
-Describe "Get-SEObject PS$PSVersion Integrations tests" {
+<# Describe "Get-SEObject PS$PSVersion Integrations tests" {
 
     Context 'Strict mode' { 
 
@@ -20,10 +20,10 @@ Describe "Get-SEObject PS$PSVersion Integrations tests" {
             $Output.name -contains 'stack overflow'
         }
     }
-}
+} #>
 
 #Unit test example
-Describe "Get-SEObject PS$PSVersion Unit tests" {
+<# Describe "Get-SEObject PS$PSVersion Unit tests" {
 
     Mock -ModuleName PSStackExchange -CommandName Get-SEData { $Args }
     Context 'Strict mode' {
@@ -49,4 +49,4 @@ Describe "Get-SEObject PS$PSVersion Unit tests" {
         }
 
     }
-}
+} #>

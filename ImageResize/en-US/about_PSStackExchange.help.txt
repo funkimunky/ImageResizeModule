@@ -1,0 +1,10 @@
+PSTOPIC
+    about_ImageResize
+
+SHORT DESCRIPTION
+    ImageResize allows you to resize images on using a path list.
+
+LONG DESCRIPTION
+    ImageResize allows you to resize images on using a path list.
+    
+DETAILED DESCRIPTION
