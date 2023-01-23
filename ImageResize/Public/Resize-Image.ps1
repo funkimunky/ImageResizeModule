@@ -24,6 +24,9 @@
             $Path = (Resolve-Path $Image).Path
             $Dot = $Path.LastIndexOf(".")
             
+            #make sure image can be written to
+            Set-IsReadOnly-False -path $Path
+
             try 
             {
                 switch ($OverWrite.IsPresent) {
