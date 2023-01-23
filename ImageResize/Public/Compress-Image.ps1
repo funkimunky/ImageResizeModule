@@ -13,16 +13,25 @@
 
     $params = switch ($type) {
         "jpg" { 'mogrify -quality 82 -resize {0}x{0}' -f $Longerside }       
+    }   
+    
+    # $path = Sanitize-String -path $path
+
+    $expression = 'magick {0} "{1}"' -f $params, $path
+
+    Try
+    {
+        # $er = (Invoke-Expression $expression) 2>&1   
+        $er = (Invoke-Expression $expression)   
+        if ($er.Length -gt 0) {throw $er}
     }
+    Catch
+    {
+        Write-Log -Text $er           
+    }
+
    
-    Get-Item $path -Include "*.$type" | 
-        Where-Object {
-            $_.Length/1kb -gt $minSize
-        } | 
-        Sort-Object -Descending length |
-        ForEach-Object {
-            $file = "'" + $_.FullName + "'"
-            Invoke-Expression "magick $params $file"
-            $Global:FinalTotal += Get-Size-Item-mb($path) 
-        }
+
+    $Global:FinalTotal += Get-Size-Item-mb($path) 
+ 
 }
