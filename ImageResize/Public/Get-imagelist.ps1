@@ -25,11 +25,10 @@ Function Get-imagelist{
                 }    
                 $ImageList.Add($_) 
                 $t.Dispose()     
-                                   
+                $counter++                  
             }else{
                 $t.Dispose() #need to close connection to bitmap so it can be overwritten  
-            }
-            $counter++
+            }            
         } | 
         Out-Null         
     } 
