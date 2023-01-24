@@ -79,6 +79,11 @@ function Compress-Image() {
         }
         
     }
+    catch {
+        Write-Log -Text $path
+        # Write-Log -Text $_.Exception.Message
+        Write-Log -Text $_.ToString()
+    }
 
    
 

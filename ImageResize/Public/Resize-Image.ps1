@@ -54,7 +54,7 @@
             {
                 Write-Log -Text $Image
                 Write-Log -Text $_.Exception.Message
-                Throw "$($_.Exception.Message)"
+                # Throw "$($_.Exception.Message)"
             }
         }
       
