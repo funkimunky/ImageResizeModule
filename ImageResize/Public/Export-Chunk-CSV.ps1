@@ -20,7 +20,6 @@
         $obj=$null    
     }
 
-    $newarr | Export-CSV -Path $csv_path  -NoTypeInformation
-    Import-Chunk-CSV
+    $newarr | Export-CSV -Path $csv_path  -NoTypeInformation 
    
 }

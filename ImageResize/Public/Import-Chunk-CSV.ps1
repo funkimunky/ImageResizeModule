@@ -14,6 +14,7 @@
     foreach($testPath in $test_import){
         $myTestArray.Add($testPath.path)
     }
+    
     return $myTestArray
 
 }
