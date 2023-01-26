@@ -13,10 +13,11 @@ class Paths {
     [System.Collections.ArrayList]$recursive_paths
     [System.Collections.ArrayList]$image_paths
     [int]$Longerside = 2500
-    [Int]$BatchAmount = 100
+    [Int]$BatchAmount = 1000
     [bool]$batchLimitReached = $false
     $FinalTotal = 0
     $OrigionalTotal = 0
+    $imagesProcessed = 0
 
     Paths($chunk_size = 10){
         Write-Log "Started processing $(Get-Date -Format u)"
@@ -25,7 +26,7 @@ class Paths {
         $this.PathFromExcel()
         $this.PathChildren()
         
-        $outputString = "Origional storage used {0} MB : Storage used after compression {1} MB)" -f $this.OrigionalTotal, $this.FinalTotal
+        $outputString = "Origional storage used {0} MB : Storage used after compression {1} MB) : Images Processed {2}" -f $this.OrigionalTotal, $this.FinalTotal, $this.imagesProcessed
         Write-Log $outputString
         Write-Log "end processing $(Get-Date -Format u)"  
     }
@@ -115,7 +116,7 @@ class Paths {
             Get-ChildItem -Path $path -Filter *.jpg |         
             ForEach-Object {
                 $t = [System.Drawing.Image]::FromFile($_.FullName)             
-                if ($t.Width -gt $Width -or $t.Height -gt $Height ) {
+                if ($t.Width -gt $this.Longerside -or $t.Height -gt $this.Longerside ) {
                     if($counter -gt $this.BatchAmount){
                         [string]$outputStr = 'batch limit of {0} reached' -f $this.BatchAmount 
                         Write-Log -Text $outputStr                       
@@ -123,7 +124,7 @@ class Paths {
                         $this.batchLimitReached = $true
                         break outer #breaking named loop https://stackoverflow.com/questions/36025696/break-out-of-inner-loop-only-in-nested-loop                    
                     }    
-                    $this.image_paths.Add($_) 
+                    $this.image_paths.Add($_.FullName) 
                     $t.Dispose()     
                     $counter++                  
                 }else{
@@ -139,17 +140,17 @@ class Paths {
     [void]ResizeImage(){ 
         $this.OrigionalTotal        
         ForEach ($Image in $this.image_paths){                
-            $Path = (Resolve-Path $Image).Path
-            $Dot = $Path.LastIndexOf(".")
+            # $Path = (Resolve-Path $Image).Path
+            # $Dot = $Path.LastIndexOf(".")
             
             #make sure image can be written to
-            Set-IsReadOnly-False -path $Path
+            Set-IsReadOnly-False -path $Image
 
             try 
             {
-                $OutputPath = $Path.Substring(0, $Dot) + $Path.Substring($Dot, $Path.Length - $Dot)                
+                # $OutputPath = $Path.Substring(0, $Dot) + $Path.Substring($Dot, $Path.Length - $Dot)                
                 $this.OrigionalTotal += Get-Size-Item-mb($Image)
-                $this.CompressImage($OutputPath) 
+                $this.CompressImage($Image) 
                 $this.FinalTotal += Get-Size-Item-mb($Image)            
             }
             catch 
@@ -209,6 +210,8 @@ class Paths {
             Write-Log -Text $path
             Write-Log -Text $_.Exception.ToString()
         }
+
+        $this.imagesProcessed ++
     }
 
 
