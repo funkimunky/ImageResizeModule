@@ -13,7 +13,7 @@ class Paths {
     [System.Collections.ArrayList]$recursive_paths
     [System.Collections.ArrayList]$image_paths
     [int]$Longerside = 2500
-    [Int]$BatchAmount = 1000
+    [Int]$BatchAmount = 200
     [bool]$batchLimitReached = $false
     $FinalTotal = 0
     $OrigionalTotal = 0
@@ -89,6 +89,7 @@ class Paths {
                     $counter ++
                 }    
                 if($counter -ge $this.chunk_size){
+                    [System.GC]::Collect()
                     [string]$outputStr = 'Chunk limit of {0} reached' -f $this.chunk_size
                     Write-Log -Text $outputStr 
 
@@ -121,6 +122,7 @@ class Paths {
                         [string]$outputStr = 'batch limit of {0} reached' -f $this.BatchAmount 
                         Write-Log -Text $outputStr                       
                         $t.Dispose()
+                        [System.GC]::Collect()
                         $this.batchLimitReached = $true
                         break outer #breaking named loop https://stackoverflow.com/questions/36025696/break-out-of-inner-loop-only-in-nested-loop                    
                     }    
