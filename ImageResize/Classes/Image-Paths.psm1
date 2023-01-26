@@ -135,7 +135,9 @@ class Paths {
             } | 
             Out-Null         
         } 
-        $this.ResizeImage()
+        if($this.image_paths.Count -gt 0){
+            $this.ResizeImage() #calling this even if nothing is in the image_paths
+        }      
     }
 
     #Resize-Image
