@@ -3,15 +3,14 @@ using module .\MyErrorRecord.psm1
 using module .\MyEXCP1.psm1
 using module .\MyEXCP2.psm1
 
-Add-Type -AssemblyName System.Drawing
 
 class Paths {    
     [int]$chunk_size
     [hashtable]$pathHash = @{}
     [System.Collections.ArrayList]$exclude_list
     [System.Collections.ArrayList]$include_list
-    [System.Collections.ArrayList]$recursive_paths
-    [System.Collections.ArrayList]$image_paths
+    [System.Collections.ArrayList]$recursive_paths = [System.Collections.ArrayList]::new()
+    [System.Collections.ArrayList]$image_paths = [System.Collections.ArrayList]::new()
     [int]$Longerside = 2500
     [Int]$BatchAmount = 200
     [bool]$batchLimitReached = $false
@@ -19,12 +18,12 @@ class Paths {
     $OrigionalTotal = 0
     $imagesProcessed = 0
 
-    Paths($chunk_size = 10){
+    Paths($BatchAmount){
         Write-Log "Started processing $(Get-Date -Format u)"
         
-        $this.chunk_size = $chunk_size
+        $this.BatchAmount = $BatchAmount
         $this.PathFromExcel()
-        $this.PathChildren()
+        $this.imagelist()
         
         $outputString = "Origional storage used {0} MB : Storage used after compression {1} MB) : Images Processed {2}" -f $this.OrigionalTotal, $this.FinalTotal, $this.imagesProcessed
         Write-Log $outputString
@@ -63,78 +62,68 @@ class Paths {
        
     }
 
-
-    #Get-Imagepaths
-    [Void]PathChildren()
-    {   
-        $this.recursive_paths = [System.Collections.ArrayList]::new()
-        $counter = 0        
+    [bool] check_path($path){
         
-        :outer
-        foreach($path in $this.include_list){
-            $systempath = Get-Item -Path $path
-            $this.recursive_paths.Add($systempath.FullName) | Out-Null # https://stackoverflow.com/questions/10286164/function-return-value-in-powershell
-
-            Get-ChildItem -Path $this.include_list -Directory -Recurse 
-            | ForEach-Object{
-                $allowed = $true
-                foreach ($exclude in $this.exclude_list) { 
-                    if (($_.Parent -ilike $exclude) -Or ($_ -ilike $exclude)) {
-                        $allowed = $false
-                        break
-                    }
-                }
-                if ($allowed) {
-                    $this.recursive_paths.Add($_.FullName)
-                    $counter ++
-                }    
-                if($counter -ge $this.chunk_size){
-                    [System.GC]::Collect()
-                    [string]$outputStr = 'Chunk limit of {0} reached' -f $this.chunk_size
-                    Write-Log -Text $outputStr 
-
-                    $this.imagelist()
-
-                    $this.recursive_paths = [System.Collections.ArrayList]::new()                   
-                    
-                    if($this.batchLimitReached){
-                        break outer
-                    }                    
-                }        
-            } | Out-Null # https://stackoverflow.com/questions/7325900/powershell-2-array-size-differs-between-return-value-and-caller
+        if($this.exclude_list.count -eq 0){
+            return $true
         }
-    }
 
+        foreach($e in $this.exclude_list){
+            if($path -match [System.Text.RegularExpressions.Regex]::Escape($e)){
+                return $false
+            }
+        }
+
+        return $true
+    }
     
     #get-imagelist
     [Void]imagelist()
-    { 
-        $this.image_paths = [System.Collections.ArrayList]::new()
+    {    
+        $c = 0
+        $break = $false
+       
+        get-childitem -path $this.include_list -recurse | Where-Object { 
+            ($break -eq $false) -and 
+            (".jpg" -eq $_.Extension) -and 
+            $this.check_path($_.FullName)            
+        } | ForEach-Object{
+                # Parameters for FileStream: Open/Read/SequentialScan
+            $FileStreamArgs = @(
+                $_
+                [System.IO.FileMode]::Open
+                [System.IO.FileAccess]::Read
+                [System.IO.FileShare]::Read
+                1024,     # Buffer size
+                [System.IO.FileOptions]::SequentialScan
+            )
 
-        $counter = 1
-        :outer
-        foreach($path in $this.recursive_paths){
-            Get-ChildItem -Path $path -Filter *.jpg |         
-            ForEach-Object {
-                $t = [System.Drawing.Image]::FromFile($_.FullName)             
-                if ($t.Width -gt $this.Longerside -or $t.Height -gt $this.Longerside ) {
-                    if($counter -gt $this.BatchAmount){
-                        [string]$outputStr = 'batch limit of {0} reached' -f $this.BatchAmount 
-                        Write-Log -Text $outputStr                       
-                        $t.Dispose()
-                        [System.GC]::Collect()
-                        $this.batchLimitReached = $true
-                        break outer #breaking named loop https://stackoverflow.com/questions/36025696/break-out-of-inner-loop-only-in-nested-loop                    
-                    }    
-                    $this.image_paths.Add($_.FullName) 
-                    $t.Dispose()     
-                    $counter++                  
-                }else{
-                    $t.Dispose() #need to close connection to bitmap so it can be overwritten  
-                }            
-            } | 
-            Out-Null         
-        } 
+
+            Try {
+                $FileStream = New-Object System.IO.FileStream -ArgumentList $FileStreamArgs
+                $Img = [System.Drawing.Imaging.Metafile]::FromStream($FileStream)
+                if(($Img) -and ($Img.PhysicalDimension.Width -gt $this.Longerside) -or ($Img.PhysicalDimension.Hight -gt $this.Longerside)){
+                    $this.image_paths.Add($_.FullName)  
+                    $c++          
+                }
+                If ($Img) {$Img.Dispose()}
+                If ($FileStream) {$FileStream.Close()}
+            }
+            Catch{
+                Write-Warning -Message "Check $ImageFile is a valid image file ($_)"
+                If ($Img) {$Img.Dispose()}
+                If ($FileStream) {$FileStream.Close()}
+            }
+
+            # used to limit batch processing size it will still process but not reach time expensive part
+            # https://www.delftstack.com/howto/powershell/exit-from-foreach-object-in-powershell/
+            if($c -ge $this.BatchAmount){
+                [string]$outputStr = 'batch limit of {0} reached' -f $this.BatchAmount 
+                Write-Log -Text $outputStr     
+                $break = $true
+            }
+        }
+
         if($this.image_paths.Count -gt 0){
             $this.ResizeImage() #calling this even if nothing is in the image_paths
         }      
@@ -143,16 +132,13 @@ class Paths {
     #Resize-Image
     [void]ResizeImage(){ 
         $this.OrigionalTotal        
-        ForEach ($Image in $this.image_paths){                
-            # $Path = (Resolve-Path $Image).Path
-            # $Dot = $Path.LastIndexOf(".")
-            
+        ForEach ($Image in $this.image_paths){ 
+
             #make sure image can be written to
             Set-IsReadOnly-False -path $Image
 
             try 
             {
-                # $OutputPath = $Path.Substring(0, $Dot) + $Path.Substring($Dot, $Path.Length - $Dot)                
                 $this.OrigionalTotal += Get-Size-Item-mb($Image)
                 $this.CompressImage($Image) 
                 $this.FinalTotal += Get-Size-Item-mb($Image)            
