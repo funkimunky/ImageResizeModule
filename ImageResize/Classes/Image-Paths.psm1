@@ -4,16 +4,13 @@ using module .\MyEXCP1.psm1
 using module .\MyEXCP2.psm1
 
 
-class Paths {    
-    [int]$chunk_size
+class Paths {
     [hashtable]$pathHash = @{}
     [System.Collections.ArrayList]$exclude_list
     [System.Collections.ArrayList]$include_list
-    [System.Collections.ArrayList]$recursive_paths = [System.Collections.ArrayList]::new()
     [System.Collections.ArrayList]$image_paths = [System.Collections.ArrayList]::new()
     [int]$Longerside = 2500
     [Int]$BatchAmount = 200
-    [bool]$batchLimitReached = $false
     $FinalTotal = 0
     $OrigionalTotal = 0
     $imagesProcessed = 0
@@ -86,6 +83,7 @@ class Paths {
         get-childitem -path $this.include_list -recurse | Where-Object { 
             ($break -eq $false) -and 
             (".jpg" -eq $_.Extension) -and 
+            ($_.Length -ne 0) -and
             $this.check_path($_.FullName)            
         } | ForEach-Object{
                 # Parameters for FileStream: Open/Read/SequentialScan
@@ -102,6 +100,7 @@ class Paths {
             Try {
                 $FileStream = New-Object System.IO.FileStream -ArgumentList $FileStreamArgs
                 $Img = [System.Drawing.Imaging.Metafile]::FromStream($FileStream)
+                Write-Host $_.FullName -ForegroundColor Yellow
                 if(($Img) -and ($Img.PhysicalDimension.Width -gt $this.Longerside) -or ($Img.PhysicalDimension.Hight -gt $this.Longerside)){
                     $this.image_paths.Add($_.FullName)  
                     $c++          
@@ -110,7 +109,8 @@ class Paths {
                 If ($FileStream) {$FileStream.Close()}
             }
             Catch{
-                Write-Warning -Message "Check $ImageFile is a valid image file ($_)"
+                $warningString = "{0} - {1}" -f $_.Exception.ErrorRecord.Exception.Message, $FileStream.Name
+                Write-Warning -Message $warningString
                 If ($Img) {$Img.Dispose()}
                 If ($FileStream) {$FileStream.Close()}
             }
