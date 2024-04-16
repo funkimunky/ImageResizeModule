@@ -15,7 +15,7 @@
     )
     $fileDate = Get-Date -Format FileDate
     $fileDateTime = Get-Date -Format ddMMyy-HH:mm
-    $exportPath = "C:\temp\process{0}.txt" -f $fileDate
+    $exportPath = "C:\temp\imageresizelogs\process{0}.txt" -f $fileDate
     $logText = "{0}`t{1}" -f $fileDateTime, $Text
 
     $logText | Tee-Object -FilePath $exportPath -Append
