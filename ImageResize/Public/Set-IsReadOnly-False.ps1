@@ -11,8 +11,9 @@
 
     )
     
-    if((Get-ChildItem -Path $path).IsReadOnly){
-        Set-ItemProperty -Path $path -Name IsReadOnly -Value $false
+    if(Get-ChildItem -LiteralPath $path -File){
+        if((Get-ChildItem -LiteralPath $path).IsReadOnly){
+            Set-ItemProperty -LiteralPath $path -Name IsReadOnly -Value $false
+        }       
     }
-
 }
