@@ -101,7 +101,7 @@ class Paths {
                 $FileStream = New-Object System.IO.FileStream -ArgumentList $FileStreamArgs
                 $Img = [System.Drawing.Imaging.Metafile]::FromStream($FileStream)
                 
-                if(($Img) -and ($Img.PhysicalDimension.Width -gt $this.Longerside) -or ($Img.PhysicalDimension.Hight -gt $this.Longerside)){
+                if(($Img) -and (($Img.PhysicalDimension.Width -gt $this.Longerside) -or ($Img.PhysicalDimension.Height -gt $this.Longerside))){
                     $this.image_paths.Add($_.FullName)  
                     $c++          
                 }
